@@ -1,59 +1,77 @@
+
+test_data <- function(filename) file.path(test_path(), "testdata", filename)
+
 test_that("`copy` precludes side effects when requested", {
-  expect_equal(2 * 2, 4)
+  dforig <- readRDS(test_data("simple.rds"))
+  dfref <- dforig
+  dfmod <- coerceDT(dforig, copy = TRUE)
+  dfmod[, z := 0]
+  expect_equal(dforig, dfref)
 })
 
 test_that("`copy` allows side effects when requested", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("`required` enforces the correct columns", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("`required` enforces the correct column classes", {
-  expect_equal(2 * 2, 4)
+  dforig <- readRDS(test_data("simple.rds"))
+  dfmod <- coerceDT(setDT(dforig), copy = FALSE)
+  expect_true(rlang::is_reference(dforig, dfmod))
 })
 
 test_that("`select` returns the correct columns", {
-  expect_equal(2 * 2, 4)
+  cols <- c("y", "x")
+  res <- coerceDT(test_data("simple.csv"), select = cols)
+  expect_equal(names(res), cols)
+  res <- coerceDT(test_data("simple.rds"), select = cols)
+  expect_equal(names(res), cols)
+  orig <- readRDS(test_data("simple.rds"))
+  res <- coerceDT(orig, select = cols)
+  expect_equal(cols, names(res))
 })
 
-test_that("`select` errors when columns not present", {
-  expect_equal(2 * 2, 4)
+test_that("`select` warns when columns not present", {
+  res <- readRDS(test_data("simple.rds"))
+  expect_warning(coerceDT(res, select = "a"))
 })
 
 test_that("`drop` drops the correct columns", {
-  expect_equal(2 * 2, 4)
+  dropcol <- "x"
+  res <- readRDS(test_data("simple.rds"))
+  expect_false(any(dropcol %in% names(coerceDT(res, drop = dropcol))))
 })
 
 test_that("`drop` warns when columns not present", {
-  expect_equal(2 * 2, 4)
+  dropcol <- c("x", "zz")
+  res <- readRDS(test_data("simple.rds"))
+  expect_warning(coerceDT(res, drop = dropcol))
 })
 
 test_that("`data` supports data.tables", {
-  expect_equal(2 * 2, 4)
+  orig <- setDT(readRDS(test_data("simple.rds")))
+  expect_no_error(coerceDT(orig))
+  expect_no_error(coerceDT(orig, copy = FALSE))
 })
 
 test_that("`data` supports data.frames", {
-  expect_equal(2 * 2, 4)
+  orig <- readRDS(test_data("simple.rds"))
+  expect_no_error(coerceDT(orig))
+  expect_no_error(coerceDT(orig, copy = FALSE))
 })
 
-test_that("`data` supports paths", {
-  expect_equal(2 * 2, 4)
+test_that("`data` supports rds paths", {
+  orig <- test_data("simple.rds")
+  expect_no_error(coerceDT(orig))
+  expect_no_error(coerceDT(orig, copy = FALSE))
 })
 
-test_that("`warn` when asked", {
-  expect_equal(2 * 2, 4)
+test_that("`data` supports csv paths", {
+  orig <- test_data("simple.csv")
+  expect_no_error(coerceDT(orig))
+  expect_no_error(coerceDT(orig, copy = FALSE))
 })
 
-test_that("do not `warn` when asked", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("fail on NAs when `NAerror`ing", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("do not fail on NAs when not `NAerror`ing", {
-  expect_equal(2 * 2, 4)
+# fread infos re using cmd interface implicitly; not sure what we can do about
+# this *currently* - would take some fancy string munging to pass it to
+# the correct fread parameter
+test_that("`data` supports commands", {
+  cmd <- "seq 1 5"
+  expect_no_error(suppressMessages(coerceDT(cmd)))
+  expect_no_error(suppressMessages(coerceDT(cmd, copy = FALSE)))
 })

@@ -3,7 +3,7 @@
 #' @description Combines [coerceDT()] and [checkDT()] to provide consistent
 #' coercion of `data` to [data.table] with error handling.
 #'
-#' @inheritParams coerceDT data copy
+#' @inheritParams coerceDT
 #'
 #' @params ... see [coerceDT()] and [checkDT()]; arguments are passed to those
 #' functions.

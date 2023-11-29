@@ -34,41 +34,33 @@
 #'
 #' @export
 coerceDT <- function(
-  data, ..., copy = TRUE
+  data, select, drop, copy = TRUE
 ) {
-  UseMethod("coerceDT")
-}
 
-#' @rdname coerceDT
-#' @importFrom data.table as.data.table setDT
-#' @export
-coerceDT.default <- function(
-  data, ..., copy
-) {
-  res_ <- if (copy) as.data.table(data) else setDT(data)
-  return(internal_select_drop_convert(res_, ...))
-}
-
-#' @rdname coerceDT
-#' @importFrom data.table fread
-#' @importFrom cli cli_abort
-#' @export
-coerceDT.character <- function(
-  data, ..., copy
-) {
-  if (length(data) != 1) {
-    cli::cli_abort(c(
-      "x" = "Argument {.var data} must have length 1.",
-      "i" = "Supplied `length(data) == {length(data)}`."
-    ))
+  if (!missing(select) && !missing(drop)) {
+    stop("Use either select= or drop= but not both")
   }
-  isRDS <- grepl(pattern = "\\.rds$", x = data, ignore.case = TRUE)
-  if (isRDS) {
-    # readRDS data may require further coercion, but won't need to be copied
-    return(coerceDT.default(readRDS(data), ..., copy = FALSE))
+
+  doargs <- list()
+  if (!missing(select)) {
+    doargs$select <- select
+  } else if (!missing(drop)) {
+    doargs$drop <- drop
+  }
+
+  if (is.character(data)) {
+    isRDS <- grepl(pattern = "\\.rds$", x = data, ignore.case = TRUE)
+    if (isRDS) {
+      doargs$data <- readRDS(data)
+      doargs$copy <- FALSE
+      do.call(coerceDT, doargs)
+    } else {
+      doargs$input <- data
+      do.call(data.table::fread, doargs)
+    }
   } else {
-    # fread sets the interface standard, so is just complete
-    return(data.table::fread(input = data, ...))
+    doargs$data <- if (copy) as.data.table(data) else setDT(data)
+    do.call(internal_select_drop_convert, doargs)
   }
 }
 
@@ -76,9 +68,22 @@ coerceDT.character <- function(
 #' To normalize behavior with `fread`, need to support these fread arguments
 #' to modify an existing `data.table`.
 internal_select_drop_convert <- function(
-  dt, nrows, stringsAsFactors, select, drop, colClasses, col.names, check.names,
-  strip.white, key, logical01, tz, ...
+  data,
+  select, drop
 ) {
 
-  return(dt)
+  if (!missing(select)) {
+    # null everything that isn't in select
+    drop <- setdiff(names(data), select)
+    selord <- intersect(select, names(data))
+    # warn for non-present items
+    if (length(select) != length(selord)) warning("Some cols not present")
+    setcolorder(data, selord)
+  }
+
+  if (!missing(drop) && length(drop) > 0) {
+    # null everything in drop
+    # will warn if non-present items
+    data[, c(drop) := NULL]
+  } else data
 }
