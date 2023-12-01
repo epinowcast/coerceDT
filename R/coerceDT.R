@@ -37,6 +37,8 @@
 #' # same as previous
 #' all(mtdt2 == mtdt3)
 #'
+#' @importFrom data.table setDT as.data.table
+#'
 #' @export
 coerceDT <- function(
   data, select, drop, copy = TRUE
@@ -63,9 +65,13 @@ coerceDT <- function(
       do.call(coerceDT, doargs)
     } else {
       doargs$input <- data
-      # need additional modifications to `select` to adjust between
-      # interface guarantees
-      do.call(data.table::fread, doargs)
+      if (!missing(select) && is.list(select)) {
+        selcoerce <- select
+        doargs$select <- names(select)
+        coerce_select(do.call(data.table::fread, doargs), select)
+      } else {
+        do.call(data.table::fread, doargs)
+      }
     }
   } else {
     doargs$data <- if (copy) as.data.table(data) else setDT(data)
@@ -104,6 +110,16 @@ check_select <- function(select) {
   return(select)
 }
 
+coerce_select <- function(data, select, selnames = names(select)) {
+  data[,
+       c(selnames) := mapply(
+         function(f, col) f(.SD[[col]]),
+         f = select, col = selnames, SIMPLIFY = FALSE
+       ),
+       .SDcols = selnames
+  ]
+}
+
 #' Select, drop, and convert columns
 #'
 #' @param data a `data.table`
@@ -114,6 +130,7 @@ check_select <- function(select) {
 #' ALWAYS modifies `data` in place. Does NOT check for consistency of `select`
 #' and `drop` arguments (i.e. at most one non missing)
 #'
+#' @importFrom data.table setcolorder
 internal_select_drop_convert <- function(
   data,
   select, drop
@@ -129,18 +146,12 @@ internal_select_drop_convert <- function(
     }
     # null everything that isn't in select
     drop <- setdiff(names(data), selnames)
-    selord <- intersect(selname, names(data))
+    selord <- intersect(selnames, names(data))
     # warn for non-present items
     if (length(select) != length(selord)) warning("Some cols not present")
     setcolorder(data, selord)
     if (is.list(select)) {
-      data[,
-        c(selnames) := mapply(
-          function(f, col) f(.SD[[col]]),
-          f = select, col = selnames, SIMPLIFY = FALSE
-        ),
-        .SDcols = selnames
-      ]
+      coerce_select(data, select, selnames)
     }
   }
 

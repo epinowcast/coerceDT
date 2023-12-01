@@ -1,8 +1,11 @@
 
 test_data <- function(filename) file.path(test_path(), "testdata", filename)
 
+test_csv <- test_data("simple.csv")
+test_rds <- test_data("simple.rds")
+
 test_that("`copy` precludes side effects when requested", {
-  dforig <- readRDS(test_data("simple.rds"))
+  dforig <- readRDS(test_rds)
   dfref <- dforig
   dfmod <- coerceDT(dforig, copy = TRUE)
   dfmod[, z := 0]
@@ -10,61 +13,59 @@ test_that("`copy` precludes side effects when requested", {
 })
 
 test_that("`copy` allows side effects when requested", {
-  dforig <- readRDS(test_data("simple.rds"))
-  dfmod <- coerceDT(setDT(dforig), copy = FALSE)
+  dforig <- readRDS(test_rds)
+  dfmod <- coerceDT(data.table::setDT(dforig), copy = FALSE)
   expect_true(rlang::is_reference(dforig, dfmod))
 })
 
 test_that("`select` returns the correct columns", {
   cols <- c("y", "x")
-  res <- coerceDT(test_data("simple.csv"), select = cols)
+  res <- coerceDT(test_csv, select = cols)
   expect_equal(names(res), cols)
-  res <- coerceDT(test_data("simple.rds"), select = cols)
+  res <- coerceDT(test_rds, select = cols)
   expect_equal(names(res), cols)
-  orig <- readRDS(test_data("simple.rds"))
+  orig <- readRDS(test_rds)
   res <- coerceDT(orig, select = cols)
   expect_equal(cols, names(res))
 })
 
 test_that("`select` warns when columns not present", {
-  res <- readRDS(test_data("simple.rds"))
+  res <- readRDS(test_rds)
   expect_warning(coerceDT(res, select = "a"))
 })
 
 test_that("`drop` drops the correct columns", {
   dropcol <- "x"
-  res <- readRDS(test_data("simple.rds"))
+  res <- readRDS(test_rds)
   expect_false(any(dropcol %in% names(coerceDT(res, drop = dropcol))))
 })
 
 test_that("`drop` warns when columns not present", {
   dropcol <- c("x", "zz")
-  res <- readRDS(test_data("simple.rds"))
+  res <- readRDS(test_rds)
   expect_warning(coerceDT(res, drop = dropcol))
 })
 
 test_that("`data` supports data.tables", {
-  orig <- setDT(readRDS(test_data("simple.rds")))
+  orig <- data.table::setDT(readRDS(test_rds))
   expect_no_error(coerceDT(orig))
   expect_no_error(coerceDT(orig, copy = FALSE))
 })
 
 test_that("`data` supports data.frames", {
-  orig <- readRDS(test_data("simple.rds"))
+  orig <- readRDS(test_rds)
   expect_no_error(coerceDT(orig))
   expect_no_error(coerceDT(orig, copy = FALSE))
 })
 
 test_that("`data` supports rds paths", {
-  orig <- test_data("simple.rds")
-  expect_no_error(coerceDT(orig))
-  expect_no_error(coerceDT(orig, copy = FALSE))
+  expect_no_error(coerceDT(test_rds))
+  expect_no_error(coerceDT(test_rds, copy = FALSE))
 })
 
 test_that("`data` supports csv paths", {
-  orig <- test_data("simple.csv")
-  expect_no_error(coerceDT(orig))
-  expect_no_error(coerceDT(orig, copy = FALSE))
+  expect_no_error(coerceDT(test_csv))
+  expect_no_error(coerceDT(test_csv, copy = FALSE))
 })
 
 # fread infos re using cmd interface implicitly; not sure what we can do about
