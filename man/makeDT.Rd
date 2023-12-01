@@ -4,17 +4,38 @@
 \alias{makeDT}
 \title{Make \code{data.table}s}
 \usage{
-makeDT(data, ..., copy = TRUE)
+makeDT(data, select, drop, required, forbidden, copy = TRUE)
 }
 \arguments{
 \item{data}{Any of the types supported by \code{\link[data.table:as.data.table]{data.table::as.data.table()}} OR
 a single character string. If a string, checked against the pattern \verb{\\\\.rds$};
 if match, uses \code{\link[=readRDS]{readRDS()}}, otherwise uses \code{\link[data.table:fread]{data.table::fread()}}.}
 
+\item{select}{columns to select; others dropped. May be: a \code{character()},
+an \code{integer()} or a named \code{list()}. If a named list, the elements in the list
+represent coercion operations for the columns: either NULL (no change),
+a string (coerce via \code{as.TYPE}, where that function is present in the global
+environment), or a function (coerce via \code{f(s)}).
+
+Emits a warning if selected elements are not present or if any column-wise
+coercion would result in \code{NA} values.}
+
+\item{drop}{columns to drop; others selected. May be: a \code{character()} or
+\code{integer()}. Emits a warning if dropped columns are not present.}
+
+\item{required}{Optional; if \code{NULL} (the default), there are no required
+columns. If a \code{character} vector, \code{coerceDT} will produce an error indicating
+which columns are not present. If a named \code{list}, the names will be required
+columns and the \code{list} entries will be used to check the corresponding
+columns. If those entries are themselves characters, those will be assumed to
+be the class to check to via an \code{is.Class} method; otherwise, they should be
+single argument functions that will be used to transform the column.}
+
+\item{forbidden}{Optional; if \code{NULL}, ignored. If a character vector,
+\code{coerceDT} will error if any of those columns are present.}
+
 \item{copy}{Logical; if \code{TRUE} (default), a new \code{data.table} is returned;
-if \code{FALSE}, \code{data} \emph{may} be modified in place, but is not \emph{guaranteed} to be
-so. For example, selecting a subset of columns creates a new \code{data.table}
-reference.}
+if \code{FALSE}, \code{data} will be modified in place if already an R object}
 }
 \value{
 A \code{data.table}; the returned object will be a copy (default), unless

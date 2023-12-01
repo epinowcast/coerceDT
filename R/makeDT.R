@@ -4,9 +4,7 @@
 #' coercion of `data` to [data.table] with error handling.
 #'
 #' @inheritParams coerceDT
-#'
-#' @params ... see [coerceDT()] and [checkDT()]; arguments are passed to those
-#' functions.
+#' @inheritParams checkDT
 #'
 #' @return A `data.table`; the returned object will be a copy (default), unless
 #' `copy = FALSE`, in which case modifications *may* be made in-place, though
@@ -22,7 +20,8 @@
 #' @export
 makeDT <- function(
   data,
-  ...,
+  select, drop,
+  required, forbidden,
   copy = TRUE
 ) {
   checkDT(coerceDT(data, ..., copy), ...)

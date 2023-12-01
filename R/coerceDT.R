@@ -7,30 +7,35 @@
 #' a single character string. If a string, checked against the pattern `\\.rds$`;
 #' if match, uses [readRDS()], otherwise uses [data.table::fread()].
 #'
-#' @param copy Logical; if `TRUE` (default), a new `data.table` is returned;
-#' if `FALSE`, `data` *may* be modified in place, but is not *guaranteed* to be
-#' so. For example, selecting a subset of columns creates a new `data.table`
-#' reference.
+#' @param select columns to select; others dropped. May be: a `character()`,
+#' an `integer()` or a named `list()`. If a named list, the elements in the list
+#' represent coercion operations for the columns: either NULL (no change),
+#' a string (coerce via `as.TYPE`, where that function is present in the global
+#' environment), or a function (coerce via `f(s)`).
 #'
-#' @inheritDotParams data.table::fread
+#' Emits a warning if selected elements are not present or if any column-wise
+#' coercion would result in `NA` values.
+#'
+#' @param drop columns to drop; others selected. May be: a `character()` or
+#' `integer()`. Emits a warning if dropped columns are not present.
+#'
+#' @param copy Logical; if `TRUE` (default), a new `data.table` is returned;
+#' if `FALSE`, `data` will be modified in place if already an R object
 #'
 #' @return A `data.table`; the returned object will be a copy (default), unless
-#' `copy = FALSE`, in which case modifications *may* be made in-place, though
-#' are not *guaranteed* to have been so
+#' `copy = FALSE`, in which case modifications are made in-place for extant
+#' objects (i.e. if `data` is not a character)
 #'
-#' @details This function provides a general-purpose tool for common, basic
-#' checking and conversion tasks with `data.table`s. It's intended use is as
-#' a simplifying, standardizing interface for raw input checking, not to perform
-#' complex requirement checks or manipulations. It is not, e.g., able to answer
-#' if one-and-only-one of some set of columns are present, or to coerce column
-#' values to a new values based on anything other than their initial value.
+#' @details This function provides a general-purpose tool for basic conversion
+#' operations with `data.table`s. It's intended use is as a simplifying,
+#' standardizing interface for data import and column-wise manipulations.
 #'
-#' This method is implemented as an S3 generic method, and dispatches according
-#' to `class(data)`. The class-specific methods may be used directly; *however*,
-#' that will skip some input checking, namely:
-#'  - that `select` / `drop` are mutually exclusive
-#'  - that `copy` must be a length 1 logical
-#'  - that `required` / `forbidden` have the correct format
+#' @examples
+#' mtdt <- coerceDT(mtcars)
+#' mtdt2 <- coerceDT(mtdt, select = c("disp", "hp"))
+#' mtdt3 <- coerceDT(mtdt, select = 3:4)
+#' # same as previous
+#' all(mtdt2 == mtdt3)
 #'
 #' @export
 coerceDT <- function(
@@ -43,7 +48,7 @@ coerceDT <- function(
 
   doargs <- list()
   if (!missing(select)) {
-    doargs$select <- select
+    doargs$select <- check_select(select)
   } else if (!missing(drop)) {
     doargs$drop <- drop
   }
@@ -51,11 +56,15 @@ coerceDT <- function(
   if (is.character(data)) {
     isRDS <- grepl(pattern = "\\.rds$", x = data, ignore.case = TRUE)
     if (isRDS) {
-      doargs$data <- readRDS(data)
+      doargs$data <- readRDS(
+        tryCatch(normalizePath(data), warning = function(e) stop(e))
+      )
       doargs$copy <- FALSE
       do.call(coerceDT, doargs)
     } else {
       doargs$input <- data
+      # need additional modifications to `select` to adjust between
+      # interface guarantees
       do.call(data.table::fread, doargs)
     }
   } else {
@@ -64,21 +73,75 @@ coerceDT <- function(
   }
 }
 
-#' TODO
-#' To normalize behavior with `fread`, need to support these fread arguments
-#' to modify an existing `data.table`.
+#' Regularize `select` argument
+#'
+#' @inheritParams coerceDT
+#'
+#' @return a checked `select` value; if `select` is a list, will have converted
+#' all the elements to function calls.
+check_select <- function(select) {
+  if (!(is.character(select) || is.integer(select) || is.list(select))) {
+    stop("`select` is not a `character`, `integer`, or `list`")
+  } else if (is.list(select)) {
+    if (any(names(select) == "")) {
+      stop("If a `list`, `select` must have `all(names(select) != '')`.")
+    }
+    select <- lapply(select, function(arg) {
+      if (is.null(arg)) {
+        function(x) x
+      } else if (is.character(arg) && length(arg) == 1) {
+        get(paste("as", arg, sep = "."))
+      } else if (is.function(arg)) {
+        arg
+      } else stop(
+        "If a `list`, `select` must specify conversions, either",
+        "as NULL (no conversion),",
+        "a string (as.TYPE conversion),",
+        "or a function (f(x) conversion)"
+      )
+    })
+  }
+  return(select)
+}
+
+#' Select, drop, and convert columns
+#'
+#' @param data a `data.table`
+#'
+#' @inheritParams coerceDT
+#'
+#' @details
+#' ALWAYS modifies `data` in place. Does NOT check for consistency of `select`
+#' and `drop` arguments (i.e. at most one non missing)
+#'
 internal_select_drop_convert <- function(
   data,
   select, drop
 ) {
 
   if (!missing(select)) {
+    if (is.character(select)) {
+      selnames <- select
+    } else if (is.integer(select)) {
+      selnames <- names(data)[select]
+    } else {
+      selnames <- names(select)
+    }
     # null everything that isn't in select
-    drop <- setdiff(names(data), select)
-    selord <- intersect(select, names(data))
+    drop <- setdiff(names(data), selnames)
+    selord <- intersect(selname, names(data))
     # warn for non-present items
     if (length(select) != length(selord)) warning("Some cols not present")
     setcolorder(data, selord)
+    if (is.list(select)) {
+      data[,
+        c(selnames) := mapply(
+          function(f, col) f(.SD[[col]]),
+          f = select, col = selnames, SIMPLIFY = FALSE
+        ),
+        .SDcols = selnames
+      ]
+    }
   }
 
   if (!missing(drop) && length(drop) > 0) {
