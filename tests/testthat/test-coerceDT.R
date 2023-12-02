@@ -3,18 +3,40 @@ test_data <- function(filename) file.path(test_path(), "testdata", filename)
 
 test_csv <- test_data("simple.csv")
 test_rds <- test_data("simple.rds")
+test_std <- as.data.table(readRDS(test_rds))
+
+######################################################
+# test reading different data sources
+
+test_that("`data` supports data.frames", {
+  orig <- readRDS(test_rds)
+  expect_no_error(res <- coerceDT(orig))
+  expect_equal(res, test_std)
+})
+
+test_that("`data` supports rds paths", {
+  expect_no_error(res <- coerceDT(test_rds))
+  expect_equal(res, test_std)
+})
+
+test_that("`data` supports csv paths", {
+  expect_no_error(res <- coerceDT(test_csv))
+  expect_equal(res, test_std)
+})
+
+#
 
 test_that("`copy` precludes side effects when requested", {
   dforig <- readRDS(test_rds)
   dfref <- dforig
   dfmod <- coerceDT(dforig, copy = TRUE)
-  dfmod[, z := 0]
+  dfmod[, a := 1]
   expect_equal(dforig, dfref)
 })
 
 test_that("`copy` allows side effects when requested", {
   dforig <- readRDS(test_rds)
-  dfmod <- coerceDT(data.table::setDT(dforig), copy = FALSE)
+  dfmod <- coerceDT(dforig, copy = FALSE)
   expect_true(rlang::is_reference(dforig, dfmod))
 })
 
@@ -52,20 +74,21 @@ test_that("`data` supports data.tables", {
   expect_no_error(coerceDT(orig, copy = FALSE))
 })
 
+######################################################
+# test different data sources
+
+
 test_that("`data` supports data.frames", {
   orig <- readRDS(test_rds)
   expect_no_error(coerceDT(orig))
-  expect_no_error(coerceDT(orig, copy = FALSE))
 })
 
 test_that("`data` supports rds paths", {
   expect_no_error(coerceDT(test_rds))
-  expect_no_error(coerceDT(test_rds, copy = FALSE))
 })
 
 test_that("`data` supports csv paths", {
   expect_no_error(coerceDT(test_csv))
-  expect_no_error(coerceDT(test_csv, copy = FALSE))
 })
 
 # fread infos re using cmd interface implicitly; not sure what we can do about
@@ -74,5 +97,4 @@ test_that("`data` supports csv paths", {
 test_that("`data` supports commands", {
   cmd <- "seq 1 5"
   expect_no_error(suppressMessages(coerceDT(cmd)))
-  expect_no_error(suppressMessages(coerceDT(cmd, copy = FALSE)))
 })

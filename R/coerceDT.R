@@ -74,7 +74,7 @@ coerceDT <- function(
       }
     }
   } else {
-    doargs$data <- if (copy) as.data.table(data) else setDT(data)
+    doargs$data <- if (copy) as.data.table(data) else eval(substitute(setDT(data)), parent.frame())
     do.call(internal_select_drop_convert, doargs)
   }
 }
