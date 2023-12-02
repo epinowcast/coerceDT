@@ -66,9 +66,11 @@ coerceDT <- function(
     } else {
       doargs$input <- data
       if (!missing(select) && is.list(select)) {
-        selcoerce <- select
+        selcoerce <- doargs$select
         doargs$select <- names(select)
-        coerce_select(do.call(data.table::fread, doargs), select)
+        coerce_select(
+          do.call(data.table::fread, doargs), selcoerce, doargs$select
+        )
       } else {
         do.call(data.table::fread, doargs)
       }
