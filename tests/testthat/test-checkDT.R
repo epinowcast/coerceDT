@@ -1,59 +1,32 @@
-test_that("`copy` precludes side effects when requested", {
-  expect_equal(2 * 2, 4)
+
+test_data <- function(filename) file.path(test_path(), "testdata", filename)
+
+# files
+test_rds <- test_data("simple.rds")
+test_std <- as.data.table(readRDS(test_rds))
+
+test_that("`required` columns does not error when columns present", {
+  expect_no_error(checkDT(test_std, required = c("x", "y")))
 })
 
-test_that("`copy` allows side effects when requested", {
-  expect_equal(2 * 2, 4)
+test_that("`required` columns errors when columns not present", {
+  expect_error(checkDT(test_std, required = c("x", "a")))
 })
 
-test_that("`required` enforces the correct columns", {
-  expect_equal(2 * 2, 4)
+test_that("`required` column checks do not error when passing", {
+  reqstmt <- list(x = "integer", y = function(x) x %in% LETTERS)
+  expect_no_error(checkDT(test_std, required = reqstmt))
 })
 
-test_that("`required` enforces the correct column classes", {
-  expect_equal(2 * 2, 4)
+test_that("`required` column checks error when not passing", {
+  reqstmt <- list(x = "integer", y = function(x) x %in% letters)
+  expect_error(checkDT(test_std, required = reqstmt))
 })
 
-test_that("`select` returns the correct columns", {
-  expect_equal(2 * 2, 4)
+test_that("`forbidden` columns does not error when columns not present", {
+  expect_no_error(checkDT(test_std, forbidden = c("a", "b")))
 })
 
-test_that("`select` errors when columns not present", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("`drop` drops the correct columns", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("`drop` warns when columns not present", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("`data` supports data.tables", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("`data` supports data.frames", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("`data` supports paths", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("`warn` when asked", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("do not `warn` when asked", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("fail on NAs when `NAerror`ing", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("do not fail on NAs when not `NAerror`ing", {
-  expect_equal(2 * 2, 4)
+test_that("`forbidden` columns errors when columns are present", {
+  expect_error(checkDT(test_std, forbidden = c("x", "a")))
 })
