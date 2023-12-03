@@ -24,5 +24,11 @@ makeDT <- function(
   required, forbidden,
   copy = TRUE
 ) {
-  checkDT(coerceDT(data, ..., copy), ...)
+  doargs_coerce <- list(data = data, copy = copy)
+  if (!missing(select)) doargs_coerce$select <- select
+  if (!missing(drop)) doargs_coerce$drop <- drop
+  doargs_check <- list(data = do.call(coerceDT, doargs_coerce))
+  if (!missing(required)) doargs_check$required <- required
+  if (!missing(forbidden)) doargs_check$forbidden <- forbidden
+  do.call(checkDT, doargs_check)
 }

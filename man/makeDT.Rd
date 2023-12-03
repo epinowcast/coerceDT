@@ -32,7 +32,8 @@ be the class to check to via an \code{is.Class} method; otherwise, they should b
 single argument functions that will be used to transform the column.}
 
 \item{forbidden}{Optional; if \code{NULL}, ignored. If a character vector,
-\code{coerceDT} will error if any of those columns are present.}
+\code{coerceDT} will error if any of those columns are present. If anything else,
+will error.}
 
 \item{copy}{Logical; if \code{TRUE} (default), a new \code{data.table} is returned;
 if \code{FALSE}, \code{data} will be modified in place if already an R object}
