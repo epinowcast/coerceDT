@@ -15,9 +15,9 @@ dtcars <- coerceDT(mtcars)
 
 ## Motivation
 
-The point of `coerceDT` is to standardize basic ingest-and-check tasks for user-provided data, yielding a `data.table` for subsequent operations OR useful error messages. The `coerceDT` function is intended for use in data science pipelines, potentially on large objects and/or with many repetitions, so must have minimal overhead while ensuring no side effects.
+The point of `coerceDT` is to standardize basic ingest-and-check tasks for user-provided data, yielding a `data.table` for subsequent operations OR useful error messages. We intend the exported functions for use in data science pipelines, potentially on large objects and/or with many repetitions, so want to have minimal overhead while ensuring no side effects.
 
-For developers, `coerceDT` should *simplify* the combination of typical ingest-and-check operations, so must be preferable to the alternative of writing their own combination of boilerplate reading / checking steps. That means we leverage the existing vocabulary of `data.table` while providing a focused mini-language for the core ingest-and-check steps. When inputs are paths, `coerceDT` should normalize (to the extent possible) the arguments between the supported mimetype readers.
+For developers, `{coerceDT}` should *simplify* the combination of typical ingest-and-check operations, so must be preferable to the alternative of writing their own combination of boilerplate reading / checking steps. That means we leverage the existing vocabulary of `data.table` while providing a focused mini-language for the core ingest-and-check steps.
 
 That mini-language address two basic questions: what *must* be present in some data? and, distinctly, what *must not* be present in that data? Notably: there may also be *no constraints* on some data.
 
@@ -27,77 +27,41 @@ Whether there are constraints, `coerceDT` provides a uniform method to getting s
 
 The are four verbs in the `coerceDT` vocabulary:
 
- 1. `required`: what column content *must* be present in the input, by default in terms of the existence of column and optionally also what `class` that column should be coerce-able-to.
- 2. `forbidden`: what column content *must not* be present in the input, by default in terms of entire columns but optionally in terms of a test that all entries in the column must satisfy.
- 3. `select`: what columns to include or exclude. If *included* columns are not present, leads to an error, but *excluded* columns may or may not be present in the input.
- 4. `rename`: convert column names to new names
+ 1. `select`: what columns to include, and potentially coerce to a particular type. If selected columns are not present, leads to a warning.
+ 2. `drop`: which columns to exclude
+ 3. `require`: what column content *must* be present in the input, by default in terms of the existence of column and optionally also testing the column values.
+ 4. `forbid`: what columns *must not* be present in the input.
 
-These verbs are applied in that order, so the early ones can be used to enforce guarantees for later ones. The function itself, however, does not guarantee any "fail fast" logic; e.g. there is no guarantee that `select` included columns will be checked at the `required` and thus failure will occur prior to checking the `forbidden` logic. Similarly, `required` and `forbidden` are enforcing constraints on the input, *not* making guarantees on the output. Rather, guarantees are a result of how a developer *combines* the verbs.
-
-Aside: `select` and `rename` *may* be eventually combined. The goal is to support both pattern matching and non-standard evaluation. The selection syntax would be roughly to exclude `-something(s)` or `-patterns(...)`, to include `something` or `pattern(...)` OR to include-AS `something = else` or `pattern(...) = \(n) somenametransformation`, and lastly "." to include everything else.
-
-The argument signature of `coerceDT` is:
-
-```r
-TODO block of stuff - make this an Rmd, so it can be generated from the function itself?
-```
+The `select` and `drop` verbs are mutually exclusive, and used in `coerceDT()`. The `require` and `forbid` verbs may be combined, and are used in `checkDT()`.
+All of the verbs may be combined in `makeDT()`.
 
 ## Detailed Vocabulary
 
-### `required`
-
-The `required` argument ultimately takes the form
-
-```r
-list(colA = as.required(x), colB = ..., ...)
-```
-
-However, users don't have to fully provide this specification. By default:
-
-```r
-as.required = \(x) x         # i.e., just use the value
-```
-
-If you want to ensure the presence of `colA`, `colB`, etc but have no other constraints, then `coerceDT(data, required = c("colA", "colB", ...), ...)` will suffice: `coerceDT` will effectively promote plain strings to the names of list. A `list` of string entries will also work.
-
-If you want all your columns as base classes, e.g. `colA` as integers, then you can use `coerceDT(data, required = c(colA = "integer", ...), ...)`. In that example, `coerceDT` will effectively promote this to `list(colA = as.integer, ...)`. Any `as.XYZ` available in the environment will be accessible by `list(colA = "XYZ")`.
-
-Lastly, if you have a more complicated casting operation, e.g. converting a character column that included numbers recorded as fractions, the you can use the fully semantics by providing a custom casting function:
-
-```r
-numeric_from_fraction = \(x) {
-  res <- numeric(length(x))
-  fracs <- grepl("/", x)
-  res[fracs] <- sapply(x[fracs], \(f) eval(parse(text = f)), USE.NAMES = FALSE)
-  res[!fracs] <- as.numeric(x[!fracs])
-  return(res)
-}
-coerceDT(data, required = list(colA = numeric_from_fraction, ...), ...)
-```
-
-The `required` argument also considers on the `na.error` argument. If any required columns have any `NA` values after casting (either from the initial data or via failures to the casting process), by default, `coerceDT`ing has failed and throws an error. If `na.error = FALSE`, `NA`s are allowed by this stage (though can still be enforced by `forbidden`, see next section).
-
-### `forbidden`
-
-The `forbidden` argument ultimately takes the form
-
-```r
-list(colA = is.forbidden(x), colB = ..., ...)
-```
-
-However, users don't have to fully provide this specification. By default:
-
-```r
-is.forbidden = \(x) TRUE         # i.e., just return true
-```
-
-If you want to prohibit the presence of `colA`, `colB`, etc but have no other constraints, then `coerceDT(data, forbidden = c("colA", "colB", ...), ...)` will suffice: `coerceDT` will effectively promote plain strings to the names of list. A `list` of string entries will also work. The default function will then indicate that any value in the column will return `TRUE`, meaning that value is forbidden, thus the only way a data structure will pass is if the column is *absent* entirely.
-
-If you want more precise checks, e.g. that `colA` must be non-negative, then you could use `coerceDT(data, forbidden = list(colA = \(x) x < 0))`. Note carefully that test should return `TRUE` when the value is *forbidden* (versus returning `TRUE` if allowed).
-
 ### `select`
 
-### `rename`
+### `drop`
+
+### `require`
+
+The `require` argument ultimately takes the form
+
+```r
+list(colA = is.required(x), colB = ..., ...)
+```
+
+However, users don't have to fully provide this specification. By default:
+
+```r
+is.required = \(x) TRUE        # i.e., any value is fine
+```
+
+If you want to ensure the presence of `colA`, `colB`, etc but have no other constraints, then `checkDT(data, required = c("colA", "colB", ...))` will suffice: `checkDT` will effectively promote plain strings to the names of list.
+
+If you want all your columns as base classes, e.g. `colA` as integers, then you can use `coerceDT(data, required = c(colA = "integer", ...), ...)`. In that example, `coerceDT` will effectively promote this to `list(colA = is.integer, ...)`. Any `is.XYZ` available in the environment will be accessible by `list(colA = "XYZ")`.
+
+Lastly, if you have a more testing operation, e.g. converting a character column that included numbers recorded as fractions, the you can use the fully semantics by providing a custom test function
+
+### `forbid`
 
 ## `copy`ing
 

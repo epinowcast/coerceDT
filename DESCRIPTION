@@ -12,8 +12,9 @@ Authors@R:
            role = c("aut"),
            email = "contact@samabbott.co.uk",
            comment = c(ORCID = "0000-0001-8057-8037")))
-Description: Provides a coerceDT function to ingest-and-check user input into
-    standardized data.tables for use in data science pipelines.
+Description: Provides coerceDT, checkDT, and makeDT functions to
+    ingest-and-check user input into standardized data.tables for use in
+    data science pipelines.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
