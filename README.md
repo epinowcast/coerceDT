@@ -15,7 +15,7 @@ dtcars <- coerceDT(mtcars)
 
 ## Motivation
 
-The point of `coerceDT` is to standardize basic ingest-and-check tasks for user-provided data, yielding a `data.table` for subsequent operations OR useful error messages. We intend the exported functions for use in data science pipelines, potentially on large objects and/or with many repetitions, so want to have minimal overhead while ensuring no side effects.
+The point of `coerceDT` is to standardize basic ingest-and-check tasks for user-provided data, yielding a `data.table` for subsequent operations OR useful error messages. We intend the exported functions for use in data science pipelines, potentially on large dataset and/or with many repetitions, so want to have minimal overhead while ensuring no side effects.
 
 For developers, `{coerceDT}` should *simplify* the combination of typical ingest-and-check operations, so must be preferable to the alternative of writing their own combination of boilerplate reading / checking steps. That means we leverage the existing vocabulary of `data.table` while providing a focused mini-language for the core ingest-and-check steps.
 

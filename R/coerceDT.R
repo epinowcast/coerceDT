@@ -4,7 +4,7 @@
 #' with error handling.
 #'
 #' @param data Any of the types supported by [data.table::as.data.table()] OR
-#' a single character string. If a string, checked against the pattern `\\.rds$`;
+#' a single character string. If a string, checked against pattern `\\.rds$`;
 #' if match, uses [readRDS()], otherwise uses [data.table::fread()].
 #'
 #' @param select columns to select; others dropped. May be: a `character()`,
@@ -56,8 +56,7 @@ coerceDT <- function(
   }
 
   if (is.character(data)) {
-    isRDS <- grepl(pattern = "\\.rds$", x = data, ignore.case = TRUE)
-    if (isRDS) {
+    if (grepl(pattern = "\\.rds$", x = data, ignore.case = TRUE)) {
       doargs$data <- readRDS(
         tryCatch(normalizePath(data), warning = function(e) stop(e))
       )
@@ -76,7 +75,10 @@ coerceDT <- function(
       }
     }
   } else {
-    doargs$data <- if (copy) as.data.table(data) else eval(substitute(setDT(data)), parent.frame())
+    doargs$data <- if (copy)
+      as.data.table(data)
+    else
+      eval(substitute(setDT(data)), parent.frame())
     do.call(internal_select_drop_convert, doargs)
   }
 }
@@ -101,12 +103,14 @@ check_select <- function(select) {
         get(paste("as", arg, sep = "."))
       } else if (is.function(arg)) {
         arg
-      } else stop(
-        "If a `list`, `select` must specify conversions, either",
-        "as NULL (no conversion),",
-        "a string (as.TYPE conversion),",
-        "or a function (f(x) conversion)"
-      )
+      } else {
+        stop(
+          "If a `list`, `select` must specify conversions, either",
+          "as NULL (no conversion),",
+          "a string (as.TYPE conversion),",
+          "or a function (f(x) conversion)"
+        )
+      }
     })
   }
   return(select)
@@ -150,7 +154,9 @@ internal_select_drop_convert <- function(
     drop <- setdiff(names(data), selnames)
     selord <- intersect(selnames, names(data))
     # warn for non-present items
-    if (length(select) != length(selord)) warning("Some cols not present")
+    if (length(select) != length(selord)) {
+      warning("Some cols not present")
+    }
     setcolorder(data, selord)
     if (is.list(select)) {
       coerce_select(data, select, selnames)
@@ -161,5 +167,7 @@ internal_select_drop_convert <- function(
     # null everything in drop
     # will warn if non-present items
     data[, c(drop) := NULL]
-  } else data
+  }
+
+  data
 }

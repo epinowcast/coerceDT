@@ -80,12 +80,14 @@ check_required <- function(require) {
         get(paste("is", arg, sep = "."))
       } else if (is.function(arg)) {
         arg
-      } else stop(
-        "If a `list`, `require` must specify checks, either",
-        "as NULL (no check other than presence),",
-        "a string (is.TYPE check),",
-        "or a function (f(x) check)"
-      )
+      } else {
+        stop(
+          "If a `list`, `require` must specify checks, either",
+          "as NULL (no check other than presence),",
+          "a string (is.TYPE check),",
+          "or a function (f(x) check)"
+        )
+      }
     })
   }
   return(require)
