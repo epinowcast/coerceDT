@@ -99,7 +99,7 @@ check_select <- function(select) {
     select <- lapply(select, function(arg) {
       if (is.null(arg)) {
         function(x) x
-      } else if (is.character(arg) && length(arg) == 1) {
+      } else if (is.character(arg) && length(arg) == 1L) {
         get(paste("as", arg, sep = "."))
       } else if (is.function(arg)) {
         arg
@@ -163,7 +163,7 @@ internal_select_drop_convert <- function(
     }
   }
 
-  if (!missing(drop) && length(drop) > 0) {
+  if (!missing(drop) && length(drop) > 0L) {
     # null everything in drop
     # will warn if non-present items
     data[, c(drop) := NULL]

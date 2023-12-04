@@ -17,8 +17,6 @@ test_that("`data` supports commands", {
   cmd <- "seq 1 5"
   expect_no_error(suppressMessages(coerceDT(cmd)))
 })
-## TODO: convert the above into something that can work w/ `allmodes`
-
 
 ######################################################
 # test reading different data sources
@@ -26,7 +24,7 @@ test_that("`data` supports commands", {
 test_that("`data` argument supports all modes", {
   lapply(allmodes, function(arg) {
     expect_no_error(res <- coerceDT(arg))
-    expect_equal(res, test_std)
+    expect_identical(res, test_std)
   })
 })
 
@@ -34,22 +32,22 @@ test_that("`copy` precludes side effects when requested", {
   dforig <- readRDS(test_rds)
   dfref <- dforig
   dfmod <- coerceDT(dforig, copy = TRUE)
-  dfmod[, a := 1]
-  expect_equal(dforig, dfref)
+  dfmod[, a := 1L]
+  expect_identical(dforig, dfref)
 })
 
 test_that("`copy` allows side effects when requested", {
   dforig <- readRDS(test_rds)
   dfmod <- coerceDT(dforig, copy = FALSE)
   expect_true(rlang::is_reference(dforig, dfmod))
-  dfmod[, a := 1]
+  dfmod[, a := 1L]
   expect_true("a" %in% names(dforig))
 })
 
 test_that("`select` returns the correct columns + order for all modes", {
   cols <- c("y", "x")
   lapply(allmodes, function(arg) {
-    expect_equal(names(coerceDT(arg, select = cols)), cols)
+    expect_named(coerceDT(arg, select = cols), cols)
   })
 })
 
@@ -66,8 +64,8 @@ test_that("`select` will convert columns", {
   )
   lapply(allmodes, function(arg) {
     expect_no_error(res <- coerceDT(arg, select = selstmt))
-    expect_equal(
-      unname(res[, sapply(.SD, function(col) class(col)[1])]),
+    expect_identical(
+      unname(res[, sapply(.SD, function(col) class(col)[1L])]),
       c("numeric", "ordered")
     )
   })

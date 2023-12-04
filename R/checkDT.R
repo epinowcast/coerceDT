@@ -52,7 +52,7 @@ checkDT <- function(
          )],
          .SDcols = cols
       ]
-      if (length(failed) != 0) {
+      if (length(failed) != 0L) {
         stop("`require` some column did not pass.")
       }
     }
@@ -76,7 +76,7 @@ check_required <- function(require) {
     require <- lapply(require, function(arg) {
       if (is.null(arg)) {
         function(x) TRUE
-      } else if (is.character(arg) && length(arg) == 1) {
+      } else if (is.character(arg) && length(arg) == 1L) {
         get(paste("is", arg, sep = "."))
       } else if (is.function(arg)) {
         arg

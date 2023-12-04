@@ -4,7 +4,7 @@ require(data.table)
 
 test_data_path <- file.path(test_path(), "testdata")
 
-example_data <- data.frame(x = 1:5, y = LETTERS[5:1], z = 0)
+example_data <- data.frame(x = 1L:5L, y = LETTERS[5L:1L], z = 0L)
 
 fwrite(example_data, file.path(test_data_path, "simple.csv"))
 
