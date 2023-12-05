@@ -29,10 +29,10 @@ The are four verbs in the `coerceDT` vocabulary:
 
  1. `select`: what columns to include, and potentially coerce to a particular type. If selected columns are not present, leads to a warning.
  2. `drop`: which columns to exclude
- 3. `require`: what column content *must* be present in the input, by default in terms of the existence of column and optionally also testing the column values.
+ 3. `expect`: what column content *must* be present in the input, by default in terms of the existence of column and optionally also testing the column values.
  4. `forbid`: what columns *must not* be present in the input.
 
-The `select` and `drop` verbs are mutually exclusive, and used in `coerceDT()`. The `require` and `forbid` verbs may be combined, and are used in `checkDT()`.
+The `select` and `drop` verbs are mutually exclusive, and used in `coerceDT()`. The `expect` and `forbid` verbs may be combined, and are used in `checkDT()`.
 All of the verbs may be combined in `makeDT()`.
 
 ## Detailed Vocabulary
@@ -41,23 +41,23 @@ All of the verbs may be combined in `makeDT()`.
 
 ### `drop`
 
-### `require`
+### `expect`
 
-The `require` argument ultimately takes the form
+The `expect` argument ultimately takes the form
 
 ```r
-list(colA = is.required(x), colB = ..., ...)
+list(colA = is.expected(x), colB = ..., ...)
 ```
 
 However, users don't have to fully provide this specification. By default:
 
 ```r
-is.required = \(x) TRUE        # i.e., any value is fine
+is.expected = \(x) TRUE        # i.e., any value is fine
 ```
 
-If you want to ensure the presence of `colA`, `colB`, etc but have no other constraints, then `checkDT(data, required = c("colA", "colB", ...))` will suffice: `checkDT` will effectively promote plain strings to the names of list.
+If you want to ensure the presence of `colA`, `colB`, etc but have no other constraints, then `checkDT(data, expect = c("colA", "colB", ...))` will suffice: `checkDT` will effectively promote plain strings to the names of list.
 
-If you want all your columns as base classes, e.g. `colA` as integers, then you can use `coerceDT(data, required = c(colA = "integer", ...), ...)`. In that example, `coerceDT` will effectively promote this to `list(colA = is.integer, ...)`. Any `is.XYZ` available in the environment will be accessible by `list(colA = "XYZ")`.
+If you want all your columns as base classes, e.g. `colA` as integers, then you can use `coerceDT(data, expect = c(colA = "integer", ...), ...)`. In that example, `coerceDT` will effectively promote this to `list(colA = is.integer, ...)`. Any `is.XYZ` available in the environment will be accessible by `list(colA = "XYZ")`.
 
 Lastly, if you have a more testing operation, e.g. converting a character column that included numbers recorded as fractions, the you can use the fully semantics by providing a custom test function
 
