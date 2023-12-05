@@ -41,7 +41,10 @@
 #'
 #' @export
 coerceDT <- function(
-  data, select, drop, copy = TRUE
+  data,
+  select, drop,
+  coalesce,
+  copy = TRUE
 ) {
 
   if (!missing(select) && !missing(drop)) {
@@ -54,14 +57,16 @@ coerceDT <- function(
   } else if (!missing(drop)) {
     doargs$drop <- drop
   }
+  if (!missing(coalesce)) {
+    doargs$coalesce <- check_coalesce(coalesce)
+  }
 
   if (is.character(data)) {
     if (grepl(pattern = "\\.rds$", x = data, ignore.case = TRUE)) {
-      doargs$data <- readRDS(
+      doargs$data <- setDT(readRDS(
         tryCatch(normalizePath(data), warning = function(e) stop(e))
-      )
-      doargs$copy <- FALSE
-      do.call(coerceDT, doargs)
+      ))
+      do.call(internal_select_drop_convert, doargs)
     } else {
       doargs$input <- data
       if (!missing(select) && is.list(select)) {
@@ -114,6 +119,19 @@ check_select <- function(select) {
     })
   }
   return(select)
+}
+
+#' Regularize `coalesce` argument
+#'
+#' @inheritParams coerceDT
+#'
+#' @return a checked `coalesce` list.
+check_coalesce <- function(coalesce) {
+  coalesce <- as.list(coalesce)
+  if (any(names(coalesce) == "")) {
+    stop("`coalesce` must have `all(names(coalesce) != '')`.")
+  }
+  return(coalesce)
 }
 
 coerce_select <- function(data, select, selnames = names(select)) {
