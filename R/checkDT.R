@@ -4,7 +4,7 @@
 #'
 #' @param data a `data.table`, e.g. as a product of [coerceDT()]
 #'
-#' @param expect Optional; if `NULL` (the default), there are no required
+#' @param expect Optional; if `NULL` (the default), there are no expected
 #' columns. If a `character` vector, `coerceDT` will produce an error indicating
 #' which columns are not present. If a named `list`, the names will be required
 #' columns and the `list` entries will be used to check the corresponding
