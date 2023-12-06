@@ -4,12 +4,12 @@
 \alias{checkDT}
 \title{Check \code{data.table}s}
 \usage{
-checkDT(data, required = NULL, forbidden = NULL)
+checkDT(data, expect = NULL, forbid = NULL)
 }
 \arguments{
 \item{data}{a \code{data.table}, e.g. as a product of \code{\link[=coerceDT]{coerceDT()}}}
 
-\item{required}{Optional; if \code{NULL} (the default), there are no required
+\item{expect}{Optional; if \code{NULL} (the default), there are no required
 columns. If a \code{character} vector, \code{coerceDT} will produce an error indicating
 which columns are not present. If a named \code{list}, the names will be required
 columns and the \code{list} entries will be used to check the corresponding
@@ -17,12 +17,12 @@ columns. If those entries are themselves characters, those will be assumed to
 be the class to check to via an \code{is.Class} method; otherwise, they should be
 single argument functions that will be used to transform the column.}
 
-\item{forbidden}{Optional; if \code{NULL}, ignored. If a character vector,
+\item{forbid}{Optional; if \code{NULL}, ignored. If a character vector,
 \code{coerceDT} will error if any of those columns are present. If anything else,
 will error.}
 }
 \value{
-\code{data} itself, assuming passing required and forbidden
+\code{data} itself, assuming passing \code{expect} and \code{forbid}
 }
 \description{
 Provides a checking interface for \code{data.table}s

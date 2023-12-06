@@ -6,7 +6,7 @@
 \alias{_PACKAGE}
 \title{coerceDT: Ingest-and-check User Input Into Data.table}
 \description{
-Provides a coerceDT function to ingest-and-check user input into standardized data.tables for use in data science pipelines.
+Provides coerceDT, checkDT, and makeDT functions to ingest-and-check user input into standardized data.tables for use in data science pipelines.
 }
 \author{
 \strong{Maintainer}: Carl Pearson \email{carl.ab.pearson@gmail.com} (\href{https://orcid.org/0000-0003-0701-7860}{ORCID})

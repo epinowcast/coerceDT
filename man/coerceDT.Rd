@@ -8,7 +8,7 @@ coerceDT(data, select, drop, copy = TRUE)
 }
 \arguments{
 \item{data}{Any of the types supported by \code{\link[data.table:as.data.table]{data.table::as.data.table()}} OR
-a single character string. If a string, checked against the pattern \verb{\\\\.rds$};
+a single character string. If a string, checked against pattern \verb{\\\\.rds$};
 if match, uses \code{\link[=readRDS]{readRDS()}}, otherwise uses \code{\link[data.table:fread]{data.table::fread()}}.}
 
 \item{select}{columns to select; others dropped. May be: a \code{character()},

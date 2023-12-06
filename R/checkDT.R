@@ -4,7 +4,7 @@
 #'
 #' @param data a `data.table`, e.g. as a product of [coerceDT()]
 #'
-#' @param require Optional; if `NULL` (the default), there are no required
+#' @param expect Optional; if `NULL` (the default), there are no expected
 #' columns. If a `character` vector, `coerceDT` will produce an error indicating
 #' which columns are not present. If a named `list`, the names will be required
 #' columns and the `list` entries will be used to check the corresponding
@@ -16,7 +16,7 @@
 #' `coerceDT` will error if any of those columns are present. If anything else,
 #' will error.
 #'
-#' @return `data` itself, assuming passing require and forbid
+#' @return `data` itself, assuming passing `expect` and `forbid`
 #'
 #' @details This function provides a general-purpose tool for common, basic
 #' checking and conversion tasks with `data.table`s. It's intended use is as
@@ -29,31 +29,31 @@
 #' @export
 checkDT <- function(
   data,
-  require = NULL, forbid = NULL
+  expect = NULL, forbid = NULL
 ) {
   if (!is.data.table(data)) stop(
     "`data` must be a data.table; perhaps `coerceDT()` first?"
   )
-  if (!is.null(require)) {
-    require <- check_required(require)
-    if (is.character(require)) {
-      if (!all(require %in% names(data))) {
-        stop("`data` does not contain `require` columns.")
+  if (!is.null(expect)) {
+    expect <- check_expected(expect)
+    if (is.character(expect)) {
+      if (!all(expect %in% names(data))) {
+        stop("`data` does not contain `expect` columns.")
       }
-    } else if (is.list(require)) {
-      cols <- names(require)
+    } else if (is.list(expect)) {
+      cols <- names(expect)
       if (!all(cols %in% names(data))) {
-        stop("`data` does not contain `require` columns.")
+        stop("`data` does not contain `expect` columns.")
       }
       failed <- data[,
          cols[!mapply(
            function(f, col) all(f(.SD[[col]])),
-           f = require, col = cols, SIMPLIFY = TRUE
+           f = expect, col = cols, SIMPLIFY = TRUE
          )],
          .SDcols = cols
       ]
       if (length(failed) != 0L) {
-        stop("`require` some column did not pass.")
+        stop("`expect` some column did not pass.")
       }
     }
   }
@@ -66,14 +66,14 @@ checkDT <- function(
   data
 }
 
-check_required <- function(require) {
-  if (!(is.character(require) || is.list(require))) {
-    stop("`require` is not a `character` or named `list`")
-  } else if (is.list(require)) {
-    if (is.null(names(require)) || any(names(require) == "")) {
-      stop("If a `list`, `require` must have `all(names(require) != '')`.")
+check_expected <- function(expect) {
+  if (!(is.character(expect) || is.list(expect))) {
+    stop("`expect` is not a `character` or named `list`")
+  } else if (is.list(expect)) {
+    if (is.null(names(expect)) || any(names(expect) == "")) {
+      stop("If a `list`, `expect` must have `all(names(expect) != '')`.")
     }
-    require <- lapply(require, function(arg) {
+    expect <- lapply(expect, function(arg) {
       if (is.null(arg)) {
         function(x) TRUE
       } else if (is.character(arg) && length(arg) == 1L) {
@@ -82,7 +82,7 @@ check_required <- function(require) {
         arg
       } else {
         stop(
-          "If a `list`, `require` must specify checks, either",
+          "If a `list`, `expect` must specify checks, either",
           "as NULL (no check other than presence),",
           "a string (is.TYPE check),",
           "or a function (f(x) check)"
@@ -90,5 +90,5 @@ check_required <- function(require) {
       }
     })
   }
-  return(require)
+  return(expect)
 }
