@@ -25,9 +25,9 @@ Whether there are constraints, `coerceDT` provides a uniform method to getting s
 
 ## Conceptual Vocabulary
 
-The are four verbs in the `coerceDT` vocabulary:
+The are four (plus one) verbs in the `coerceDT` vocabulary:
 
- 1. `select`: what columns to include, and potentially coerce to a particular type. If selected columns are not present, leads to a warning.
+ 1. `select`: what columns to include, and potentially coerce to a particular type. If selected columns are not present, leads to a warning. `select` also has the "plus one verb": `default`, which will provide select values if they are absent.
  2. `drop`: which columns to exclude
  3. `require`: what column content *must* be present in the input, by default in terms of the existence of column and optionally also testing the column values.
  4. `forbid`: what columns *must not* be present in the input.
