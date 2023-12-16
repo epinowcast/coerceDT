@@ -4,11 +4,11 @@
 \alias{coerceDT}
 \title{Coerce \code{data.table}s}
 \usage{
-coerceDT(data, select, drop, copy = TRUE)
+coerceDT(data, select, drop, default, copy = TRUE)
 }
 \arguments{
 \item{data}{Any of the types supported by \code{\link[data.table:as.data.table]{data.table::as.data.table()}} OR
-a single character string. If a string, checked against the pattern \verb{\\\\.rds$};
+a single character string. If a string, checked against pattern \verb{\\\\.rds$};
 if match, uses \code{\link[=readRDS]{readRDS()}}, otherwise uses \code{\link[data.table:fread]{data.table::fread()}}.}
 
 \item{select}{columns to select; others dropped. May be: a \code{character()},
@@ -22,6 +22,11 @@ coercion would result in \code{NA} values.}
 
 \item{drop}{columns to drop; others selected. May be: a \code{character()} or
 \code{integer()}. Emits a warning if dropped columns are not present.}
+
+\item{default}{columns to select or create with default values. These will
+effectively be added to \code{select} if not already present. If they overlap
+with \code{select}ed columns, which also specify a transformation, that
+transformation will be applied to the default values (if needed).}
 
 \item{copy}{Logical; if \code{TRUE} (default), a new \code{data.table} is returned;
 if \code{FALSE}, \code{data} will be modified in place if already an R object}

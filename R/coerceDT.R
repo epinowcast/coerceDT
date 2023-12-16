@@ -53,7 +53,7 @@ coerceDT <- function(
 ) {
 
   if (!missing(select) && !missing(drop)) {
-    stop("Use either select= or drop= but not both")
+    internal_error("Use either select= or drop= but not both")
   }
 
   doargs <- list()
@@ -69,7 +69,7 @@ coerceDT <- function(
   if (is.character(data)) {
     if (grepl(pattern = "\\.rds$", x = data, ignore.case = TRUE)) {
       doargs$data <- setDT(readRDS(
-        tryCatch(normalizePath(data), warning = function(e) stop(e))
+        tryCatch(normalizePath(data), warning = internal_error)
       ))
       do.call(internal_select_drop_convert, doargs)
     } else {
@@ -102,16 +102,18 @@ coerceDT <- function(
 
 #' Regularize `select` argument
 #'
+#' @param call the calling environment, used in error messages
+#'
 #' @inheritParams coerceDT
 #'
 #' @return a checked `select` value; if `select` is a list, will have converted
 #' all the elements to function calls.
-check_select <- function(select) {
+check_select <- function(select, call = parent.frame()) {
   if (!(is.character(select) || is.integer(select) || is.list(select))) {
-    stop("`select` is not a `character`, `integer`, or `list`")
+    internal_error("`select` is not a `character`, `integer`, or `list`", call = call)
   } else if (is.list(select)) {
     if (any(names(select) == "")) {
-      stop("If a `list`, `select` must have `all(names(select) != '')`.")
+      internal_error("If a `list`, `select` must have `all(names(select) != '')`.", call = call)
     }
     select <- lapply(select, function(arg) {
       if (is.null(arg)) {
@@ -121,11 +123,12 @@ check_select <- function(select) {
       } else if (is.function(arg)) {
         arg
       } else {
-        stop(
+        internal_error(
           "If a `list`, `select` must specify conversions, either",
           "as NULL (no conversion),",
           "a string (as.TYPE conversion),",
-          "or a function (f(x) conversion)"
+          "or a function (f(x) conversion)",
+          call = call
         )
       }
     })
@@ -135,13 +138,15 @@ check_select <- function(select) {
 
 #' Regularize `default` argument
 #'
+#' @param call the calling environment, used in error messages
+#'
 #' @inheritParams coerceDT
 #'
 #' @return a checked `default` list.
-check_default <- function(default) {
+check_default <- function(default, call = parent.frame()) {
   default <- as.list(default)
   if (any(names(default) == "")) {
-    stop("`default` must have `all(names(default) != '')`.")
+    internal_error("`default` must have `all(names(default) != '')`.", call = call)
   }
   return(default)
 }
@@ -170,6 +175,8 @@ coerce_default <- function(data, default) {
 #'
 #' @param data a `data.table`
 #'
+#' @param call the calling environment, used in error messages
+#'
 #' @inheritParams coerceDT
 #'
 #' @details
@@ -179,7 +186,8 @@ coerce_default <- function(data, default) {
 #' @importFrom data.table setcolorder
 internal_select_drop_convert <- function(
   data,
-  select, drop, default
+  select, drop, default,
+  call = parent.frame()
 ) {
 
   # first, consider default columns:
@@ -218,7 +226,7 @@ internal_select_drop_convert <- function(
     selord <- intersect(selnames, names(data))
     # warn for non-present items
     if (length(select) != length(selord)) {
-      warning("Some cols not present")
+      internal_warn("Some cols not present", call = call)
     }
     setcolorder(data, selord)
     if (is.list(select)) {
