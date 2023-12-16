@@ -31,19 +31,19 @@ checkDT <- function(
   data,
   require = NULL, forbid = NULL
 ) {
-  if (!is.data.table(data)) stop(
+  if (!is.data.table(data)) internal_error(
     "`data` must be a data.table; perhaps `coerceDT()` first?"
   )
   if (!is.null(require)) {
     require <- check_required(require)
     if (is.character(require)) {
       if (!all(require %in% names(data))) {
-        stop("`data` does not contain `require` columns.")
+        internal_error("`data` does not contain `require` columns.")
       }
     } else if (is.list(require)) {
       cols <- names(require)
       if (!all(cols %in% names(data))) {
-        stop("`data` does not contain `require` columns.")
+        internal_error("`data` does not contain `require` columns.")
       }
       failed <- data[,
          cols[!mapply(
@@ -53,25 +53,25 @@ checkDT <- function(
          .SDcols = cols
       ]
       if (length(failed) != 0L) {
-        stop("`require` some column did not pass.")
+        internal_error("`require` some column did not pass.")
       }
     }
   }
   if (!is.null(forbid)) {
-    if (!is.character(forbid)) stop("`forbid` must be a `character`")
+    if (!is.character(forbid)) internal_error("`forbid` must be a `character`")
     if (any(forbid %in% names(data))) {
-      stop("`data` contains `forbid` columns.")
+      internal_error("`data` contains `forbid` columns.")
     }
   }
   data
 }
 
-check_required <- function(require) {
+check_required <- function(require, call = parent.frame()) {
   if (!(is.character(require) || is.list(require))) {
-    stop("`require` is not a `character` or named `list`")
+    internal_error("`require` is not a `character` or named `list`", call = call)
   } else if (is.list(require)) {
     if (is.null(names(require)) || any(names(require) == "")) {
-      stop("If a `list`, `require` must have `all(names(require) != '')`.")
+      internal_error("If a `list`, `require` must have `all(names(require) != '')`.", call = call)
     }
     require <- lapply(require, function(arg) {
       if (is.null(arg)) {
@@ -81,11 +81,12 @@ check_required <- function(require) {
       } else if (is.function(arg)) {
         arg
       } else {
-        stop(
+        internal_error(
           "If a `list`, `require` must specify checks, either",
           "as NULL (no check other than presence),",
           "a string (is.TYPE check),",
-          "or a function (f(x) check)"
+          "or a function (f(x) check)",
+          call = call
         )
       }
     })

@@ -4,7 +4,13 @@
 \alias{internal_select_drop_convert}
 \title{Select, drop, and convert columns}
 \usage{
-internal_select_drop_convert(data, select, drop)
+internal_select_drop_convert(
+  data,
+  select,
+  drop,
+  default,
+  call = parent.frame()
+)
 }
 \arguments{
 \item{data}{a \code{data.table}}
@@ -20,6 +26,13 @@ coercion would result in \code{NA} values.}
 
 \item{drop}{columns to drop; others selected. May be: a \code{character()} or
 \code{integer()}. Emits a warning if dropped columns are not present.}
+
+\item{default}{columns to select or create with default values. These will
+effectively be added to \code{select} if not already present. If they overlap
+with \code{select}ed columns, which also specify a transformation, that
+transformation will be applied to the default values (if needed).}
+
+\item{call}{the calling environment, used in error messages}
 }
 \description{
 Select, drop, and convert columns

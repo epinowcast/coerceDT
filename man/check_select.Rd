@@ -4,7 +4,7 @@
 \alias{check_select}
 \title{Regularize \code{select} argument}
 \usage{
-check_select(select)
+check_select(select, call = parent.frame())
 }
 \arguments{
 \item{select}{columns to select; others dropped. May be: a \code{character()},
@@ -15,6 +15,8 @@ environment), or a function (coerce via \code{f(s)}).
 
 Emits a warning if selected elements are not present or if any column-wise
 coercion would result in \code{NA} values.}
+
+\item{call}{the calling environment, used in error messages}
 }
 \value{
 a checked \code{select} value; if \code{select} is a list, will have converted
