@@ -16,6 +16,11 @@
 #' Emits a warning if selected elements are not present or if any column-wise
 #' coercion would result in `NA` values.
 #'
+#' @param default columns to select or create with default values. These will
+#' effectively be added to `select` if not already present. If they overlap
+#' with `select`ed columns, which also specify a transformation, that
+#' transformation will be applied to the default values (if needed).
+#'
 #' @param drop columns to drop; others selected. May be: a `character()` or
 #' `integer()`. Emits a warning if dropped columns are not present.
 #'
@@ -41,7 +46,10 @@
 #'
 #' @export
 coerceDT <- function(
-  data, select, drop, copy = TRUE
+  data,
+  select, drop,
+  default,
+  copy = TRUE
 ) {
 
   if (!missing(select) && !missing(drop)) {
@@ -54,14 +62,16 @@ coerceDT <- function(
   } else if (!missing(drop)) {
     doargs$drop <- drop
   }
+  if (!missing(default)) {
+    doargs$default <- check_default(default)
+  }
 
   if (is.character(data)) {
     if (grepl(pattern = "\\.rds$", x = data, ignore.case = TRUE)) {
-      doargs$data <- readRDS(
+      doargs$data <- setDT(readRDS(
         tryCatch(normalizePath(data), warning = function(e) stop(e))
-      )
-      doargs$copy <- FALSE
-      do.call(coerceDT, doargs)
+      ))
+      do.call(internal_select_drop_convert, doargs)
     } else {
       doargs$input <- data
       if (!missing(select) && is.list(select)) {
@@ -71,7 +81,14 @@ coerceDT <- function(
           do.call(data.table::fread, doargs), selcoerce, doargs$select
         )
       } else {
-        do.call(data.table::fread, doargs)
+        if (is.null(doargs$default)) {
+          do.call(data.table::fread, doargs)
+        } else {
+          default <- doargs$default
+          doargs$select <- names(default)
+          doargs$default <- NULL
+          coerce_default(suppressWarnings(do.call(data.table::fread, doargs)), default)
+        }
       }
     }
   } else {
@@ -116,6 +133,19 @@ check_select <- function(select) {
   return(select)
 }
 
+#' Regularize `default` argument
+#'
+#' @inheritParams coerceDT
+#'
+#' @return a checked `default` list.
+check_default <- function(default) {
+  default <- as.list(default)
+  if (any(names(default) == "")) {
+    stop("`default` must have `all(names(default) != '')`.")
+  }
+  return(default)
+}
+
 coerce_select <- function(data, select, selnames = names(select)) {
   data[,
        c(selnames) := mapply(
@@ -124,6 +154,16 @@ coerce_select <- function(data, select, selnames = names(select)) {
        ),
        .SDcols = selnames
   ]
+}
+
+coerce_default <- function(data, default) {
+  for (defcol in names(default)) {
+    # if not present, create with default
+    if (is.null(data[[defcol]])) {
+      data[, c(defcol) := default[defcol]]
+    }
+  }
+  data
 }
 
 #' Select, drop, and convert columns
@@ -139,9 +179,30 @@ coerce_select <- function(data, select, selnames = names(select)) {
 #' @importFrom data.table setcolorder
 internal_select_drop_convert <- function(
   data,
-  select, drop
+  select, drop, default
 ) {
 
+  # first, consider default columns:
+  #  - they will created in the data if not present
+  #  - they will added to select columns, if selecting
+  if (!missing(default)) {
+    coerce_default(data, default)
+    default <- lapply(default, function(d) NULL)
+    # if there is an explicit select, add all defaults to it
+    if (!missing(select)) {
+      if (is.character(select)) {
+        select <- unique(c(select, names(default)))
+      } else if (is.integer(select)) {
+        select <- c(select, dim(data)[2L] + (1L - length(default)):0L)
+      } else {
+        for (defcol in names(default)) {
+          if (is.null(select[defcol])) select[defcol] <- default[defcol]
+        }
+      }
+    }
+  }
+
+  # now if selecting, convert & use selection
   if (!missing(select)) {
     if (is.character(select)) {
       selnames <- select
@@ -150,8 +211,10 @@ internal_select_drop_convert <- function(
     } else {
       selnames <- names(select)
     }
-    # null everything that isn't in select
-    drop <- setdiff(names(data), selnames)
+    if (missing(drop)) {
+      # null everything that isn't in select
+      drop <- setdiff(names(data), selnames)
+    }
     selord <- intersect(selnames, names(data))
     # warn for non-present items
     if (length(select) != length(selord)) {

@@ -92,3 +92,25 @@ test_that("`drop` warns when columns not present", {
     expect_warning(coerceDT(arg, drop = dropcol))
   })
 })
+
+test_that("including both `select` and `drop` is an error.", {
+  lapply(allmodes, function(arg) {
+    expect_error(coerceDT(arg, select = "y", drop = "x"))
+  })
+})
+
+test_that("`default` does not overwrite columns when they are present.", {
+  def <- list(x = 1, y = 2, z = 3)
+  lapply(allmodes, function(arg) {
+    expect_identical(test_std, coerceDT(arg, default = def))
+  })
+})
+
+test_that("`default` creates columns when they are not present.", {
+  def <- list(x = 1, y = 2, z = 3, a = "Z")
+  test_ref <- data.table::copy(test_std)[, a := def$a ]
+  lapply(allmodes, function(arg) {
+    expect_identical(test_ref, coerceDT(arg, default = def))
+  })
+})
+
