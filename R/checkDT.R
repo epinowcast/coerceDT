@@ -29,7 +29,9 @@
 #' @export
 checkDT <- function(
   data,
-  require = NULL, forbid = NULL
+  require = NULL, forbid = NULL,
+  rqr_message = "`require`d are missing or not compliant in `data`: %s",
+  fbd_message = "`forbid`den columns are present in `data`: %s"
 ) {
   if (!is.data.table(data)) internal_error(
     "`data` must be a data.table; perhaps `coerceDT()` first?"
@@ -37,31 +39,22 @@ checkDT <- function(
   if (!is.null(require)) {
     require <- check_required(require)
     if (is.character(require)) {
-      if (!all(require %in% names(data))) {
-        internal_error("`data` does not contain `require` columns.")
-      }
+      report_error(setdiff(require, names(data)), rqr_message)
     } else if (is.list(require)) {
       cols <- names(require)
-      if (!all(cols %in% names(data))) {
-        internal_error("`data` does not contain `require` columns.")
-      }
-      failed <- data[,
+      report_error(setdiff(cols, names(data)), rqr_message)
+      report_error(data[,
          cols[!mapply(
            function(f, col) all(f(.SD[[col]])),
            f = require, col = cols, SIMPLIFY = TRUE
          )],
          .SDcols = cols
-      ]
-      if (length(failed) != 0L) {
-        internal_error("`require` some column did not pass.")
-      }
+      ], rqr_message)
     }
   }
   if (!is.null(forbid)) {
     if (!is.character(forbid)) internal_error("`forbid` must be a `character`")
-    if (any(forbid %in% names(data))) {
-      internal_error("`data` contains `forbid` columns.")
-    }
+    report_error(intersect(forbid, names(data)), fbd_message)
   }
   data
 }

@@ -49,7 +49,8 @@ coerceDT <- function(
   data,
   select, drop,
   default,
-  copy = TRUE
+  copy = TRUE,
+  sel_message = "`select`ed are missing or not compliant in `data`: %s"
 ) {
 
   if (!missing(select) && !missing(drop)) {
@@ -78,11 +79,13 @@ coerceDT <- function(
         selcoerce <- doargs$select
         doargs$select <- names(select)
         coerce_select(
-          do.call(data.table::fread, doargs), selcoerce, doargs$select
+          # TODO
+          tryCatch(do.call(data.table::fread, doargs), warning = stop),
+          selcoerce, doargs$select
         )
       } else {
         if (is.null(doargs$default)) {
-          do.call(data.table::fread, doargs)
+          tryCatch(do.call(data.table::fread, doargs), warning = stop)
         } else {
           default <- doargs$default
           doargs$select <- names(default)
@@ -187,6 +190,7 @@ coerce_default <- function(data, default) {
 internal_select_drop_convert <- function(
   data,
   select, drop, default,
+  sel_message,
   call = parent.frame()
 ) {
 
@@ -219,18 +223,14 @@ internal_select_drop_convert <- function(
     } else {
       selnames <- names(select)
     }
+    report_error(setdiff(selnames, names(data)), sel_message, call = call)
+    setcolorder(data, selnames)
+    if (is.list(select)) {
+      coerce_select(data, select, selnames)
+    }
     if (missing(drop)) {
       # null everything that isn't in select
       drop <- setdiff(names(data), selnames)
-    }
-    selord <- intersect(selnames, names(data))
-    # warn for non-present items
-    if (length(select) != length(selord)) {
-      internal_warn("Some cols not present", call = call)
-    }
-    setcolorder(data, selord)
-    if (is.list(select)) {
-      coerce_select(data, select, selnames)
     }
   }
 

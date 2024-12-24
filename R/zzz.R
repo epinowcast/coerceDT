@@ -28,6 +28,11 @@ internal_warn <- function(..., call) warning(...)
   if (requireNamespace("cli", quietly = TRUE)) {
     packageStartupMessage("coerceDT: using `cli` messaging.")
   } else {
-    packageStartupMessage("coerceDT: using `base` messaging; to use `cli` messages, install `cli`.")
+    packageStartupMessage(
+      paste(c(
+        "coerceDT: using `base` messaging.",
+        "To use `cli` messages, install `cli` and restart your session."
+      ), collapse = "\n\t")
+    )
   }
 }

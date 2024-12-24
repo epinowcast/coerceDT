@@ -22,13 +22,20 @@ makeDT <- function(
   data,
   select, drop,
   require, forbid,
-  copy = TRUE
+  copy = TRUE,
+  sel_message = "`select`ed are missing or not compliant in `data`: %s",
+  rqr_message = "`require`d are missing or not compliant in `data`: %s",
+  fbd_message = "`forbid`den columns are present in `data`: %s"
 ) {
   doargs_coerce <- list(data = data, copy = copy)
   if (!missing(select)) doargs_coerce$select <- select
   if (!missing(drop)) doargs_coerce$drop <- drop
+  if (!missing(sel_message)) doargs_coerce$sel_message <- sel_message
+
   doargs_check <- list(data = do.call(coerceDT, doargs_coerce))
   if (!missing(require)) doargs_check$require <- require
   if (!missing(forbid)) doargs_check$forbid <- forbid
+  if (!missing(rqr_message)) doargs_check$rqr_message <- rqr_message
+  if (!missing(fbd_message)) doargs_check$fbd_message <- fbd_message
   do.call(checkDT, doargs_check)
 }

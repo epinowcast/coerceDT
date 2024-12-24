@@ -51,9 +51,9 @@ test_that("`select` returns the correct columns + order for all modes", {
   })
 })
 
-test_that("`select` warns when columns not present", {
+test_that("`select` errors when columns not present", {
   lapply(allmodes, function(arg) {
-    expect_warning(coerceDT(arg, select = "a"))
+    expect_error(coerceDT(arg, select = "a"))
   })
 })
 
