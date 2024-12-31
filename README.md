@@ -1,5 +1,5 @@
 
-# coerceDT
+# makeDT
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -7,37 +7,49 @@
 ## Quickstart
 
 ```r
-remotes::install_github("epinowcast/coerceDT")
-# TODO: install.package("coerceDT")
-require(coerceDT)
-dtcars <- coerceDT(mtcars)
+remotes::install_github("epinowcast/makeDT")
+# TODO: install.package("makeDT")
+library(makeDT)
+mtcars_dt <- makeDT(mtcars, select = list(hp = "integer", "wt"))
+mtcars_dt
 ```
 
 ## Motivation
 
-The point of `coerceDT` is to standardize basic ingest-and-check tasks for user-provided data, yielding a `data.table` for subsequent operations OR useful error messages. We intend the exported functions for use in data science pipelines, potentially on large dataset and/or with many repetitions, so want to have minimal overhead while ensuring no side effects.
+The point of `makeDT` is to streamline ingest-and-check tasks for user-provided data, yielding a `data.table` for subsequent operations OR useful error messages. The exported functions are meant as internal functions for data science pipeline packages, potentially on large datasets and/or with many repetitions, so performance is a key concern.
 
-For developers, `{coerceDT}` should *simplify* the combination of typical ingest-and-check operations, so must be preferable to the alternative of writing their own combination of boilerplate reading / checking steps. That means we leverage the existing vocabulary of `data.table` while providing a focused mini-language for the core ingest-and-check steps.
+For developers, `{makeDT}` should *simplify* the combination of typical ingest-and-check operations, so must be preferable to the alternative of writing their own boilerplate reading / checking steps. To that end, we leverage the existing "grammar" of `data.table` while providing a focused mini-language for the specific task.
 
-That mini-language address two basic questions: what *must* be present in some data? and, distinctly, what *must not* be present in that data? Notably: there may also be *no constraints* on some data.
+That mini-language address two basic questions: what *must* be present in some data? and, distinctly, what *must not* be present in that data?
 
-Whether there are constraints, `coerceDT` provides a uniform method to getting some input in the `data.table` format. The same interface can flexibly handle a file path or existing object. Likewise, it can be used to ensure no side-effects on the input object, or allow those side-effects to maximize performance.
+Whether there are constraints, `{makeDT}` also provides a uniform method to translate input in the `data.table` format: the same interface can flexibly handle an existing object (of any of the types supported by `data.table::setDT()` and `data.table::as.data.table()`), anything that `data.table::fread` would handle, a path to an `rds` file. Finally, the `{makeDT}` methods by default ensure no side-effects on the input object, but can allow side-effects to maximize performance.
 
 ## Conceptual Vocabulary
 
-The are four (plus one) verbs in the `coerceDT` vocabulary:
+There are three operations, `castDT`, `testDT`, and `makeDT` which combine the four verbs in the `{makeDT}` vocabulary:
 
- 1. `select`: what columns to include, and potentially coerce to a particular type. If selected columns are not present, leads to a warning. `select` also has the "plus one verb": `default`, which will provide select values if they are absent.
- 2. `drop`: which columns to exclude
- 3. `expect`: what column content *must* be present in the input, by default in terms of the existence of column and optionally also testing the column values.
- 4. `forbid`: what columns *must not* be present in the input.
+ - `keep` & `drop`: what columns to *include* (keep) or *exclude* (drop).
+ - `expect` & `forbid`: what column content *must* (expect) or *must not* (forbid) be present.
 
-The `select` and `drop` verbs are mutually exclusive, and used in `coerceDT()`. The `expect` and `forbid` verbs may be combined, and are used in `checkDT()`.
+Essentially, `castDT` turns some object into a `data.table` without performing any checks. `testDT` tests if an existing `data.table` complies with a specification, but won't do anything to convert the input to a `data.table`. Lastly, `makeDT` does `castDT`, then `checkDT`.
+
+The `select` and `drop` verbs are arguments to `castDT()`. The `expect` and `forbid` verbs are used in `checkDT()`.
 All of the verbs may be combined in `makeDT()`.
+
+At this time, the complementary verbs are mutually exclusive - e.g. `castDT(data, select = ..., drop = ...)` will emit an error. However, users should not rely on this error behavior for program logic: we may eventually relax these hard errors to enable convenient behavior like "transform this column this way, drop this column, and keep the rest as-is".
+
+The cross verbs can work together:
+
+ 1. `select` and `forbid` will automatically work if they name mutually exclusive columns .
+
 
 ## Detailed Vocabulary
 
-### `select`
+### `select` & `drop`.
+
+The basic `select` argument is a character vector: `c("colA", "colB")` selects two columns. The complementary argument, `drop`, is just a character vector. Specifying overlapping columns for `select` and `drop` is an error.
+
+When not supplied, `select` is assumed to be all the columns, minus any specified in `drop`.
 
 ### `drop`
 
@@ -59,7 +71,7 @@ If you want to ensure the presence of `colA`, `colB`, etc but have no other cons
 
 If you want all your columns as base classes, e.g. `colA` as integers, then you can use `coerceDT(data, expect = c(colA = "integer", ...), ...)`. In that example, `coerceDT` will effectively promote this to `list(colA = is.integer, ...)`. Any `is.XYZ` available in the environment will be accessible by `list(colA = "XYZ")`.
 
-Lastly, if you have a more testing operation, e.g. converting a character column that included numbers recorded as fractions, the you can use the fully semantics by providing a custom test function
+Lastly, if you have a more testing operation, e.g. converting a character column that included numbers recorded as fractions, the you can use the full semantics by providing a custom test function
 
 ### `forbid`
 
@@ -87,10 +99,10 @@ We could split the difference by making the error contract loose, MVP the first 
 
 ## Installation
 
-You can install the development version of `coerceDT` using the `remotes` package:
+You can install the development version of `makeDT` using the `remotes` package:
 
 ```r
-remotes::install_github("epinowcast/coerceDT")
+remotes::install_github("epinowcast/makeDT")
 ```
 
 ## Example
@@ -98,7 +110,16 @@ remotes::install_github("epinowcast/coerceDT")
 This is a basic example which shows you how to solve a common problem:
 
 ``` r
-library(coerceDT)
+library(makeDT)
 ## basic example code
 ```
 
+## More Motivation
+
+The `makeDT` function grew out of `{epinowcast}` package needs. We intend the
+functions in `{epinowcast}` to be assembled into pipelines by other users, while
+also providing our own pipelining. This generally means proper handling of
+user-space data, namely: no surprise side effects, but also no assumptions about
+the validity of that data. At the same time, we want to avoid unnecessarily
+copying and checking data passed from other parts of the library (or for
+advanced users that are fine with side-effects to data).
