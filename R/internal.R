@@ -18,19 +18,14 @@
       stop("If a `list`, `select` must have `all(names(select) != '')`.")
     }
     select <- lapply(select, function(arg) {
-      if (is.null(arg)) {
+      if (is.null(arg)) { # no-op transformation
         function(x) x
-      } else if (is.character(arg) && length(arg) == 1L) {
-        get(paste("as", arg, sep = "."))
       } else if (is.function(arg)) {
         arg
+      } else if (is.list(arg)) {
+        # check at least one argument is a function, put it in first position
       } else {
-        stop(
-          "If a `list`, `select` must specify conversions, either",
-          "as NULL (no conversion),",
-          "a string (as.TYPE conversion),",
-          "or a function (f(x) conversion)"
-        )
+        arg
       }
     })
   }
@@ -49,8 +44,8 @@
   UseMethod("loadDT")
 }
 
-# n.b.: keep / drop will be handled elsewhere; only copy relevant here
 # anything that isn't a character will be thrown at as.data.table / setDT
+# n.b.: keep / drop will be handled elsewhere; only copy relevant to this case
 #' @rdname loadDT
 .loadDT.default <- function(data, ..., copy) {
   tryCatch(
@@ -64,8 +59,9 @@
   )
 }
 
+# character case: either an rds or fed to fread
 # n.b.: copy irrelevant here, since going to disk. keep / drop may be relevant
-# if `fread`ing
+# if `fread`ing, otherwise handled later
 #' @rdname loadDT
 .loadDT.character <- function(data, keep, drop, ...) {
   if (grepl("^[^[:space:]]\\.rds", data, ignore.case = TRUE)) {
