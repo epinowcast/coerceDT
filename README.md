@@ -69,7 +69,7 @@ is.expected = \(x) TRUE        # i.e., any value is fine
 
 If you want to ensure the presence of `colA`, `colB`, etc but have no other constraints, then `checkDT(data, expect = c("colA", "colB", ...))` will suffice: `checkDT` will effectively promote plain strings to the names of list.
 
-If you want all your columns as base classes, e.g. `colA` as integers, then you can use `coerceDT(data, expect = c(colA = "integer", ...), ...)`. In that example, `coerceDT` will effectively promote this to `list(colA = is.integer, ...)`. Any `is.XYZ` available in the environment will be accessible by `list(colA = "XYZ")`.
+If you want all your columns as base classes, e.g. `colA` as integers, then you can use `castDT(data, expect = c(colA = "integer", ...), ...)`. In that example, `castDT` will effectively promote this to `list(colA = is.integer, ...)`. Any `is.XYZ` available in the environment will be accessible by `list(colA = "XYZ")`.
 
 Lastly, if you have a more testing operation, e.g. converting a character column that included numbers recorded as fractions, the you can use the full semantics by providing a custom test function
 
@@ -77,21 +77,21 @@ Lastly, if you have a more testing operation, e.g. converting a character column
 
 ## `copy`ing
 
-The use of the `copy` argument is at the core of maintaining performance with `coerceDT`. For some operations, `coerceDT` will internally manage when copies are *not* made - e.g. in general, `data.table` selections provide new objects and preclude modification of the input object, so in these cases it is unnecessary to make an additional copy.
+The use of the `copy` argument is at the core of maintaining performance with `castDT`. For some operations, `castDT` will internally manage when copies are *not* made - e.g. in general, `data.table` selections provide new objects and preclude modification of the input object, so in these cases it is unnecessary to make an additional copy.
 
-Otherwise, by default, `coerceDT` will ensure its input is not modified by creating a new object. This is generally the appropriate guarantee for some user-facing function. However, that behavior might be undesirable for performance reasons, _e.g._ if that guarantee is otherwise enforced like when `coerceDT` is used in a series of internal function calls.
+Otherwise, by default, `castDT` will ensure its input is not modified by creating a new object. This is generally the appropriate guarantee for some user-facing function. However, that behavior might be undesirable for performance reasons, _e.g._ if that guarantee is otherwise enforced like when `castDT` is used in a series of internal function calls.
 
 ## Inner Workings
 
-A typically developer should be using `coerceDT`. However, that method is actually a gateway to several other functions, which handle particular types of `data` and translate the verbs accordingly. For data coming from the file system, those underlying readers often support elements of the `coerceDT` vocabulary, but with different names or format, hence translation is required.
+A typically developer should be using `castDT`. However, that method is actually a gateway to several other functions, which handle particular types of `data` and translate the verbs accordingly. For data coming from the file system, those underlying readers often support elements of the `castDT` vocabulary, but with different names or format, hence translation is required.
 
 The general idea is to *not* repeat steps, both in terms of what the code does, but also in how the code is written. This means that some steps do part of the necessary work, then pass `data` off to other methods, after modifying arguments.
 
-These functions are exported, and thus available to use directly. However, the entry point `coerceDT` function checks the verbs but the class-specific versions *do not*.
+These functions are exported, and thus available to use directly. However, the entry point `castDT` function checks the verbs but the class-specific versions *do not*.
 
 ## Fail Fast versus Fail Thorough
 
-TODO: should our philosophy be to fail on the first error, or to collect errors as far as possible into `coerceDT`ing, and then report out?
+TODO: should our philosophy be to fail on the first error, or to collect errors as far as possible into `castDT`ing, and then report out?
 
 The first option is easiest to implement (by a long stretch), but the second is probably the most useful to people?
 

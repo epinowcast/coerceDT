@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/reference/test_package.html#special-files
 
 library(testthat)
-library(coerceDT) # nolint
+library(castDT) # nolint
 
-test_check("coerceDT")
+test_check("castDT")

@@ -1,4 +1,7 @@
 
+#' @import data.table
+NULL
+
 #' Regularize `keep` argument
 #'
 #' @inheritParams castDT
@@ -11,7 +14,7 @@
   if (!(is.character(keep) || is.integer(keep) || is.list(keep))) {
     stop(sprintf(
       "`keep` = %s is not a `character`, `integer`, or `list`; found %s",
-      deparse(substitute(keep)), toString(class(keep))
+      toString(deparse(substitute(keep))), toString(class(keep))
     ))
   } else if (is.list(select)) {
     if (any(names(select) == "")) {
@@ -32,28 +35,22 @@
   return(select)
 }
 
-#' @title Internal Method for Loading Data
-#'
-#' @inheritParams castDT
-#'
-#' @details
-#' The `keep` argument must have already been [.generalize_keep()]'d.
-#'
-#' @keywords internal
-.loadDT <- function(data, keep, drop, copy) {
-  UseMethod("loadDT")
-}
-
 # anything that isn't a character will be thrown at as.data.table / setDT
 # n.b.: keep / drop will be handled elsewhere; only copy relevant to this case
 #' @rdname loadDT
-.loadDT.default <- function(data, ..., copy) {
+#' @export
+loadDT.default <- function(data, ..., copy = TRUE) {
   tryCatch(
-    if (copy) as.data.table(data) else setDT(data),
+    if (copy) as.data.table(data) else {
+      if (is.list(data) || is.data.frame(data)) {
+        setDT(data)
+      } else {
+        stop(sprintf("Cannot `copy=FALSE` when data is class %s", toString(class(data))), call. = FALSE)
+      }
+    },
     error = function(e) {
       stop(sprintf(
-        "Failed to convert `data=%s` to a data.table; underlying error: %s",
-        deparse(substitute(data)), e
+        "Failed to convert `data=` to a data.table; underlying error:\n  %s", e
       ))
     }
   )
@@ -63,8 +60,11 @@
 # n.b.: copy irrelevant here, since going to disk. keep / drop may be relevant
 # if `fread`ing, otherwise handled later
 #' @rdname loadDT
-.loadDT.character <- function(data, keep, drop, ...) {
-  if (grepl("^[^[:space:]]\\.rds", data, ignore.case = TRUE)) {
+#' @export
+loadDT.character <- function(data, keep, drop, ...) {
+  if (length(data) > 1) {
+    stop("`makeDT` does not support `data=` character vectors with length > 1")
+  } else if (grepl("^[^[:space:]]\\.rds", data, ignore.case = TRUE)) {
     return(readRDS(data))
   } else {
     calllist <- list(input = data, data.table = TRUE)
@@ -84,4 +84,18 @@
     return(do.call(data.table::fread, calllist))
   }
 
+}
+
+
+#' @title Internal Method for Loading Data
+#'
+#' @inheritParams castDT
+#'
+#' @details
+#' The `keep` argument must have already been [.generalize_keep()]'d.
+#'
+#' @keywords internal
+#' @export
+loadDT <- function(data, keep, drop, copy = TRUE) {
+  UseMethod("loadDT")
 }

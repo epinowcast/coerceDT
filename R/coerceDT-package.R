@@ -1,6 +1,6 @@
 #' @keywords internal
 #' @docType package
-#' @aliases coerceDT-package
+#' @aliases castDT-package
 "_PACKAGE"
 
 ## usethis namespace: start

@@ -1,6 +1,6 @@
-Package: coerceDT
+Package: makeDT
 Type: Package
-Title: Ingest-and-check User Input Into Data.table
+Title: Systematically Convert User Input Into `data.table`s
 Version: 0.1.0
 Authors@R:
   c(person(given = "Carl",
@@ -12,7 +12,7 @@ Authors@R:
            role = c("aut"),
            email = "contact@samabbott.co.uk",
            comment = c(ORCID = "0000-0001-8057-8037")))
-Description: Provides coerceDT, checkDT, and makeDT functions to
+Description: Provides castDT, checkDT, and makeDT functions to
     ingest-and-check user input into standardized data.tables for use in
     data science pipelines.
 License: MIT + file LICENSE
@@ -25,6 +25,6 @@ Suggests:
     devtools
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Imports: 
     data.table

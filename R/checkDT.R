@@ -2,10 +2,10 @@
 #'
 #' @description Provides a checking interface for `data.table`s
 #'
-#' @param data a `data.table`, e.g. as a product of [coerceDT()]
+#' @param data a `data.table`, e.g. as a product of [castDT()]
 #'
 #' @param expect Optional; if `NULL` (the default), there are no expected
-#' columns. If a `character` vector, `coerceDT` will produce an error indicating
+#' columns. If a `character` vector, `castDT` will produce an error indicating
 #' which columns are not present. If a named `list`, the names will be required
 #' columns and the `list` entries will be used to check the corresponding
 #' columns. If those entries are themselves characters, those will be assumed to
@@ -13,7 +13,7 @@
 #' single argument functions that will be used to transform the column.
 #'
 #' @param forbid Optional; if `NULL`, ignored. If a character vector,
-#' `coerceDT` will error if any of those columns are present. If anything else,
+#' `castDT` will error if any of those columns are present. If anything else,
 #' will error.
 #'
 #' @return `data` itself, assuming passing `expect` and `forbid`
@@ -32,7 +32,7 @@ checkDT <- function(
   expect = NULL, forbid = NULL
 ) {
   if (!is.data.table(data)) stop(
-    "`data` must be a data.table; perhaps `coerceDT()` first?"
+    "`data` must be a data.table; perhaps `castDT()` first?"
   )
   if (!is.null(expect)) {
     expect <- check_expected(expect)

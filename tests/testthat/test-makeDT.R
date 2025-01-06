@@ -5,6 +5,6 @@ test_data <- function(filename) file.path(test_path(), "testdata", filename)
 test_rds <- test_data("simple.rds")
 test_std <- as.data.table(readRDS(test_rds))
 
-test_that("`makeDT` hands off correctly to `coerceDT` then `checkDT`", {
+test_that("`makeDT` hands off correctly to `castDT` then `checkDT`", {
   expect_no_error(makeDT(test_std, select = c("x", "y"), forbid = "z"))
 })

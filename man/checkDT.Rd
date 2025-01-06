@@ -7,10 +7,10 @@
 checkDT(data, expect = NULL, forbid = NULL)
 }
 \arguments{
-\item{data}{a \code{data.table}, e.g. as a product of \code{\link[=coerceDT]{coerceDT()}}}
+\item{data}{a \code{data.table}, e.g. as a product of \code{\link[=castDT]{castDT()}}}
 
-\item{expect}{Optional; if \code{NULL} (the default), there are no required
-columns. If a \code{character} vector, \code{coerceDT} will produce an error indicating
+\item{expect}{Optional; if \code{NULL} (the default), there are no expected
+columns. If a \code{character} vector, \code{castDT} will produce an error indicating
 which columns are not present. If a named \code{list}, the names will be required
 columns and the \code{list} entries will be used to check the corresponding
 columns. If those entries are themselves characters, those will be assumed to
@@ -18,7 +18,7 @@ be the class to check to via an \code{is.Class} method; otherwise, they should b
 single argument functions that will be used to transform the column.}
 
 \item{forbid}{Optional; if \code{NULL}, ignored. If a character vector,
-\code{coerceDT} will error if any of those columns are present. If anything else,
+\code{castDT} will error if any of those columns are present. If anything else,
 will error.}
 }
 \value{

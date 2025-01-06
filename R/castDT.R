@@ -36,75 +36,47 @@
 #' casting functions.
 #'
 #' @examples
-#' mtdt <- coerceDT(mtcars)
-#' mtdt2 <- coerceDT(mtdt, select = c("disp", "hp"))
-#' mtdt3 <- coerceDT(mtdt, select = 3:4)
+#' mtdt <- castDT(mtcars)
+#' mtdt2 <- castDT(mtdt, keep = c("disp", "hp"))
+#' mtdt3 <- castDT(mtdt, keep = 3:4)
 #' # same as previous
 #' all(mtdt2 == mtdt3)
 #'
 #' @importFrom data.table setDT as.data.table
 #'
 #' @export
-coerceDT <- function(
+castDT <- function(
   data,
-  select, drop,
-  default,
+  keep, drop,
   copy = TRUE
 ) {
 
-  if (!missing(select) && !missing(drop)) {
+  if (!missing(keep) && !missing(drop)) {
     stop("Use either select= or drop= but not both")
   }
 
-  doargs <- list()
-  if (!missing(select)) {
-    doargs$select <- check_select(select)
-  } else if (!missing(drop)) {
-    doargs$drop <- drop
-  }
-  if (!missing(default)) {
-    doargs$default <- check_default(default)
+  .doargs <- as.list(environment())
+  if (!missing(keep)) {
+    .doargs$keep <- .generalize_keep(keep)
   }
 
-  if (is.character(data)) {
-    if (grepl(pattern = "\\.rds$", x = data, ignore.case = TRUE)) {
-      doargs$data <- setDT(readRDS(
-        tryCatch(normalizePath(data), warning = function(e) stop(e))
-      ))
-      do.call(internal_select_drop_convert, doargs)
-    } else {
-      doargs$input <- data
-      if (!missing(select) && is.list(select)) {
-        selcoerce <- doargs$select
-        doargs$select <- names(select)
-        coerce_select(
-          do.call(data.table::fread, doargs), selcoerce, doargs$select
-        )
-      } else {
-        if (is.null(doargs$default)) {
-          do.call(data.table::fread, doargs)
-        } else {
-          default <- doargs$default
-          doargs$select <- names(default)
-          doargs$default <- NULL
-          coerce_default(suppressWarnings(do.call(data.table::fread, doargs)), default)
-        }
-      }
-    }
-  } else {
-    doargs$data <- if (copy)
-      as.data.table(data)
-    else
-      eval(substitute(setDT(data)), parent.frame())
-    do.call(internal_select_drop_convert, doargs)
+  data <- do.call(loadDT, .doargs)
+
+  if (!missing(keep)) {
+
   }
+
+  if (!missing(drop)) {
+    for (nm in drop) data[[nm]] <- NULL
+  }
+
 }
 
 
 
 #' Regularize `default` argument
 #'
-#' @inheritParams coerceDT
+#' @inheritParams castDT
 #'
 #' @return a checked `default` list.
 check_default <- function(default) {
@@ -139,7 +111,7 @@ coerce_default <- function(data, default) {
 #'
 #' @param data a `data.table`
 #'
-#' @inheritParams coerceDT
+#' @inheritParams castDT
 #'
 #' @details
 #' ALWAYS modifies `data` in place. Does NOT check for consistency of `select`
